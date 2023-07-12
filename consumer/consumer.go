@@ -75,7 +75,11 @@ func (c *Consumer) monitorConnection(ctx context.Context, errChan chan *amqp.Err
 		case <-time.After(1 * time.Second):
 			err := c.Channel.Qos(c.prefetchCount, 0, c.prefetchGlobal)
 			if err != nil {
-				errChan <- amqp.ErrClosed
+				select {
+				case errChan <- fmt.Errorf("error setting QoS: %w", err):
+				default:
+					fmt.Errorf("errChan is not read, need to handle it")
+				}
 			}
 		}
 	}
